@@ -19,14 +19,13 @@ public  class LuaFileWatcher
     public static void CreateLuaFileWatcher(LuaEnv luaEnv)
     {
         var scriptPath = Path.Combine(Application.dataPath, "LuaScripts");
-        var directoryWatcher =
-            new DirectoryWatcher(scriptPath, new FileSystemEventHandler(LuaFileOnChanged));
+        DirectoryWatcher.CreateWatch(scriptPath, new FileSystemEventHandler(OnLuaFileChanged));
         ReloadFunction = luaEnv.Global.Get<ReloadDelegate>("hotfix");
         EditorApplication.update -= Reload;
         EditorApplication.update += Reload;
     }
 
-    private static void LuaFileOnChanged(object obj, FileSystemEventArgs args)
+    private static void OnLuaFileChanged(object obj, FileSystemEventArgs args)
     {
         var fullPath = args.FullPath;
         var luaFolderName = "LuaScripts";
