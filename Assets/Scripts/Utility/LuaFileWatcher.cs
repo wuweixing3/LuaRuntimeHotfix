@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -12,15 +13,18 @@ public delegate void ReloadDelegate(string path);
 
 public  class LuaFileWatcher
 {
-    private static ReloadDelegate ReloadFunction;
+    
+    private const string PrePath = "LuaScripts";
+    
+    private static ReloadDelegate _reloadFunction;
     
     private static HashSet<string> _changedFiles = new HashSet<string>();
     
     public static void CreateLuaFileWatcher(LuaEnv luaEnv)
     {
-        var scriptPath = Path.Combine(Application.dataPath, "LuaScripts");
+        var scriptPath = Path.Combine(Application.dataPath, PrePath);
         DirectoryWatcher.CreateWatch(scriptPath, new FileSystemEventHandler(OnLuaFileChanged));
-        ReloadFunction = luaEnv.Global.Get<ReloadDelegate>("hotfix");
+        _reloadFunction = luaEnv.Global.Get<ReloadDelegate>("hotfix");
         EditorApplication.update -= Reload;
         EditorApplication.update += Reload;
     }
@@ -28,9 +32,9 @@ public  class LuaFileWatcher
     private static void OnLuaFileChanged(object obj, FileSystemEventArgs args)
     {
         var fullPath = args.FullPath;
-        var luaFolderName = "LuaScripts";
+        var luaFolderName = PrePath;
         var requirePath = fullPath.Replace(".lua", "");
-        var luaScriptIndex = requirePath.IndexOf(luaFolderName) + luaFolderName.Length + 1;
+        var luaScriptIndex = requirePath.IndexOf(luaFolderName, StringComparison.Ordinal) + luaFolderName.Length + 1;
         requirePath = requirePath.Substring(luaScriptIndex);
         requirePath = requirePath.Replace('\\','.');
         _changedFiles.Add(requirePath);
@@ -49,7 +53,7 @@ public  class LuaFileWatcher
 
         foreach (var file in _changedFiles)
         {
-            ReloadFunction(file);
+            _reloadFunction(file);
             Debug.Log("Reload:" + file);
         }
         _changedFiles.Clear();
